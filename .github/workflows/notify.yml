@@ -1,0 +1,38 @@
+name: Blogger to Telegram Notifier
+
+on:
+  schedule:
+    # 30분마다 한 번씩 실행해요 (UTC 기준이라 한국 시간과는 달라요!)
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # 직접 버튼을 눌러서 실행할 수 있게 해요
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v3
+
+      - name: 파이썬 설치하기
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 필요한 도구 설치하기
+        run: |
+          pip install requests feedparser
+
+      - name: 프로그램 실행하기
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BLOGGER_URL: ${{ secrets.BLOGGER_URL }}
+        run: python blogger_to_telegram.py
+
+      - name: 상태 저장하기 (마지막 글 날짜 자동 업데이트)
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          git add last_post.txt
+          git commit -m "Update last post info" || exit 0
+          git push
